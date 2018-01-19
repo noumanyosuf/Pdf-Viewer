@@ -80,6 +80,10 @@ PdfViewer_MainWindow::~PdfViewer_MainWindow()
     toolBar->deleteLater();
     label->deleteLater();
     scrollArea->deleteLater();
+
+    if(doc)
+        delete doc;
+
     qDebug()<<"Object deleted sucessfully";
 }
 
@@ -115,11 +119,23 @@ void PdfViewer_MainWindow::open()
     if(doc==NULL)
     {
         qDebug()<<"can not open document";
+        fz_drop_context(ctx);
         return;
     }
 
+    if (fz_needs_password(ctx,doc)) {
+        bool ok;
+        QString password;
+        do {
+            QInputDialog get_password(this);
+            password = QInputDialog::getText(this, tr("Enter password"),
+                                             tr("Password:"), QLineEdit::Normal,
+                                             "", &ok);
+            if (!ok){exit(0);}
+        } while (!fz_authenticate_password(ctx,doc,password.toLatin1().data()));
+    }
+
     m_numPages=fz_count_pages(ctx, doc);
-//    qDebug()<<"no of pages"<<m_numPages<<"\n";
 
     //resetting all variable to default while opening new pdf/doc.
     search_count=0;
@@ -659,8 +675,8 @@ QImage PdfViewer_MainWindow::render(int pagenumber,float scaleX, float scaleY, f
         pix_width=width;
     }
 
-//    qDebug()<<"pix width "<<width<<" pix height "<<height;
-//    qDebug()<<"this width"<<this->width()<<" this height"<<this->height()<<endl;
+    //    qDebug()<<"pix width "<<width<<" pix height "<<height;
+    //    qDebug()<<"this width"<<this->width()<<" this height"<<this->height()<<endl;
 
 
 
